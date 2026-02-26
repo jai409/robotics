@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DHT11 Temperature & Humidity Monitor — Arduino Project</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --white:        #ffffff;
+  --off:          #f8f7f4;
+  --stone:        #f0ede8;
+  --border:       #e4e0d9;
+  --border2:      #d0cac0;
+  --ink:          #18160f;
+  --ink2:         #3d3830;
+  --muted:        #8c8479;
+  --accent:       #2563eb;
+  --accent-lt:    #dbeafe;
+  --accent-dk:    #1d4ed8;
+  --warn:         #b45309;
+  --warn-bg:      #fef3c7;
+  --danger:       #dc2626;
+  --danger-bg:    #fee2e2;
+  --ok:           #166534;
+  --ok-bg:        #dcfce7;
+  --serif:        'DM Serif Display', Georgia, serif;
+  --sans:         'DM Sans', system-ui, sans-serif;
+  --mono:         'DM Mono', 'Courier New', monospace;
+  --r:            8px;
+  --sh-sm:        0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  --sh:           0 4px 16px rgba(0,0,0,.07), 0 1px 4px rgba(0,0,0,.05);
+  --sh-lg:        0 12px 40px rgba(0,0,0,.10), 0 2px 8px rgba(0,0,0,.06);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;font-size:16px}
+body{background:var(--white);color:var(--ink);font-family:var(--sans);font-weight:300;line-height:1.7;-webkit-font-smoothing:antialiased}
+
+/* ─ Layout ─ */
+.wrap  { max-width:900px;  margin:0 auto; padding:0 2rem }
+.wrapW { max-width:1060px; margin:0 auto; padding:0 2rem }
+
+/* ─ Nav ─ */
+nav {
+  position:sticky; top:0; z-index:100;
+  background:rgba(255,255,255,.92);
+  backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);
+}
+.nav-in {
+  max-width:1060px; margin:0 auto; padding:0 2rem;
+  height:60px; display:flex; align-items:center; justify-content:space-between;
+}
+.nav-logo { font-family:var(--mono); font-size:.78rem; font-weight:500; color:var(--ink2); letter-spacing:.04em }
+.nav-logo b { color:var(--accent) }
+.nav-links { display:flex; gap:2rem; list-style:none }
+.nav-links a { font-size:.82rem; font-weight:400; color:var(--muted); text-decoration:none; transition:color .15s; letter-spacing:.01em }
+.nav-links a:hover { color:var(--ink) }
+
+/* ─ Hero ─ */
+.hero {
+  padding:7rem 2rem 5.5rem;
+  max-width:1060px; margin:0 auto;
+  display:grid; grid-template-columns:1fr auto;
+  gap:4rem; align-items:center;
+}
+.eyebrow {
+  display:inline-flex; align-items:center; gap:.5rem;
+  font-family:var(--mono); font-size:.68rem; font-weight:500;
+  letter-spacing:.12em; text-transform:uppercase;
+  color:var(--accent); background:var(--accent-lt);
+  padding:.28rem .85rem; border-radius:100px; margin-bottom:1.4rem;
+  opacity:0; animation:rise .6s .05s ease forwards;
+}
+.eyebrow::before { content:''; width:6px; height:6px; background:var(--accent); border-radius:50%; flex-shrink:0 }
+h1 {
+  font-family:var(--serif); font-size:clamp(2.4rem,3.8vw,3.6rem);
+  font-weight:400; line-height:1.13; letter-spacing:-.01em; color:var(--ink);
+  opacity:0; animation:rise .6s .15s ease forwards;
+}
+h1 em { font-style:italic; color:var(--accent) }
+.hero-subtitle {
+  margin-top:.85rem; font-size:1rem; color:var(--muted); font-weight:400;
+  opacity:0; animation:rise .6s .25s ease forwards;
+}
+.hero-desc {
+  margin-top:1.4rem; font-size:.93rem; color:var(--ink2); line-height:1.78; max-width:480px;
+  opacity:0; animation:rise .6s .35s ease forwards;
+}
+.stat-block {
+  display:grid; grid-template-columns:1fr 1fr;
+  gap:1px; background:var(--border);
+  border:1px solid var(--border); border-radius:var(--r);
+  overflow:hidden; box-shadow:var(--sh); flex-shrink:0;
+  opacity:0; animation:rise .6s .45s ease forwards;
+}
+.stat-cell { background:var(--white); padding:1.4rem 1.6rem; transition:background .15s; cursor:default }
+.stat-cell:hover { background:var(--off) }
+.stat-val { font-family:var(--serif); font-size:1.85rem; display:block; line-height:1; margin-bottom:.35rem }
+.stat-key { font-size:.7rem; font-weight:500; text-transform:uppercase; letter-spacing:.09em; color:var(--muted) }
+
+/* ─ Section ─ */
+.section { padding:5rem 0; border-top:1px solid var(--border) }
+.sec-eyebrow { font-family:var(--mono); font-size:.68rem; font-weight:500; text-transform:uppercase; letter-spacing:.14em; color:var(--muted); margin-bottom:.55rem }
+h2 { font-family:var(--serif); font-size:2rem; font-weight:400; color:var(--ink); letter-spacing:-.01em; margin-bottom:.55rem }
+.sec-intro { font-size:.9rem; color:var(--muted); line-height:1.75; max-width:520px; margin-bottom:2.5rem }
+
+/* ─ Components ─ */
+.comp-grid {
+  display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr));
+  gap:1px; background:var(--border);
+  border:1px solid var(--border); border-radius:var(--r); overflow:hidden; box-shadow:var(--sh-sm);
+}
+.comp-card { background:var(--white); padding:1.8rem 1.6rem; transition:background .15s }
+.comp-card:hover { background:var(--off) }
+.comp-ico {
+  width:42px; height:42px; border-radius:9px;
+  background:var(--stone); border:1px solid var(--border2);
+  display:flex; align-items:center; justify-content:center;
+  font-size:1.25rem; margin-bottom:.9rem;
+}
+.comp-name { font-weight:500; font-size:.92rem; color:var(--ink); margin-bottom:.35rem; letter-spacing:-.01em }
+.comp-desc { font-size:.8rem; color:var(--muted); line-height:1.6 }
+.badge {
+  display:inline-block; margin-top:.75rem;
+  font-family:var(--mono); font-size:.65rem; font-weight:500;
+  letter-spacing:.06em; color:var(--ink2);
+  background:var(--stone); border:1px solid var(--border2);
+  padding:.18rem .55rem; border-radius:4px;
+}
+.badge--opt { color:var(--warn); background:var(--warn-bg); border-color:#fcd34d }
+
+/* ─ Wiring tabs ─ */
+.tab-strip {
+  display:flex; width:fit-content;
+  border:1px solid var(--border); border-radius:var(--r);
+  overflow:hidden; margin-bottom:1.8rem; box-shadow:var(--sh-sm);
+}
+.tab-btn {
+  font-family:var(--sans); font-size:.8rem; font-weight:500;
+  padding:.52rem 1.3rem; background:var(--white); border:none;
+  border-right:1px solid var(--border); cursor:pointer;
+  color:var(--muted); transition:all .15s; letter-spacing:.01em;
+}
+.tab-btn:last-child{border-right:none}
+.tab-btn:hover { background:var(--off); color:var(--ink) }
+.tab-btn.on { background:var(--ink); color:var(--white) }
+.tab-pane { display:none }
+.tab-pane.on { display:block }
+
+/* ─ Wire table ─ */
+.wire-tbl {
+  width:100%; border-collapse:separate; border-spacing:0;
+  border:1px solid var(--border); border-radius:var(--r);
+  overflow:hidden; box-shadow:var(--sh-sm); font-size:.85rem;
+}
+.wire-tbl thead tr { background:var(--stone) }
+.wire-tbl th {
+  font-family:var(--sans); font-weight:500; font-size:.68rem;
+  text-transform:uppercase; letter-spacing:.09em; color:var(--muted);
+  padding:.8rem 1.3rem; text-align:left; border-bottom:1px solid var(--border);
+}
+.wire-tbl td {
+  padding:.95rem 1.3rem; border-bottom:1px solid var(--border); vertical-align:middle; background:var(--white);
+}
+.wire-tbl tr:last-child td { border-bottom:none }
+.wire-tbl tr:hover td { background:var(--off) }
+.chip {
+  display:inline-flex; align-items:center;
+  font-family:var(--mono); font-size:.75rem; font-weight:500;
+  padding:.18rem .6rem; border-radius:5px; border:1px solid; letter-spacing:.03em; white-space:nowrap;
+}
+.chip-vcc  { color:#b91c1c; background:#fef2f2; border-color:#fca5a5 }
+.chip-gnd  { color:#374151; background:#f3f4f6; border-color:#d1d5db }
+.chip-dat  { color:#166534; background:#f0fdf4; border-color:#86efac }
+.chip-pull { color:#92400e; background:#fef3c7; border-color:#fcd34d }
+.chip-nc   { color:var(--muted); background:var(--stone); border-color:var(--border2); text-decoration:line-through }
+.arrow-col { color:var(--border2); font-size:.95rem }
+.note-row {
+  margin-top:1.4rem; padding:.95rem 1.2rem;
+  border-radius:var(--r); display:flex; gap:.7rem;
+  font-size:.82rem; line-height:1.65; align-items:flex-start;
+}
+.note-info { background:var(--accent-lt); border:1px solid #bfdbfe; color:#1e40af }
+.note-warn { background:var(--warn-bg); border:1px solid #fcd34d; color:#92400e }
+.note-ico  { font-size:.95rem; flex-shrink:0; margin-top:.1rem }
+
+/* ─ Code ─ */
+.code-card { border:1px solid var(--border); border-radius:var(--r); overflow:hidden; box-shadow:var(--sh) }
+.code-bar {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:.85rem 1.3rem; background:var(--stone); border-bottom:1px solid var(--border);
+}
+.dots { display:flex; gap:.38rem }
+.dots span { width:11px; height:11px; border-radius:50% }
+.dots span:nth-child(1){background:#fca5a5}
+.dots span:nth-child(2){background:#fcd34d}
+.dots span:nth-child(3){background:#86efac}
+.filename { font-family:var(--mono); font-size:.72rem; font-weight:500; color:var(--muted); letter-spacing:.03em }
+.copy-btn {
+  display:inline-flex; align-items:center; gap:.38rem;
+  font-family:var(--sans); font-size:.75rem; font-weight:500;
+  color:var(--muted); background:var(--white);
+  border:1px solid var(--border2); padding:.32rem .85rem;
+  border-radius:6px; cursor:pointer; transition:all .15s;
+}
+.copy-btn:hover { background:var(--ink); color:var(--white); border-color:var(--ink) }
+.copy-btn.ok { background:var(--ok-bg); color:var(--ok); border-color:#86efac }
+pre {
+  background:#18150e; padding:1.8rem; overflow-x:auto;
+  font-family:var(--mono); font-size:.81rem; line-height:1.82; tab-size:2; color:#c9c0b0;
+}
+/* tokens */
+.pp  { color:#f97316 }
+.kw  { color:#c084fc }
+.tp  { color:#fbbf24 }
+.fn  { color:#60a5fa }
+.st  { color:#86efac }
+.nm  { color:#fb923c }
+.cm  { color:#57534e; font-style:italic }
+.op  { color:#7c8a99 }
+.cn  { color:#34d399 }
+.id  { color:#e8dfd2 }
+
+/* ─ Alert cards ─ */
+.alert-grid {
+  display:grid; grid-template-columns:repeat(3,1fr);
+  gap:1px; background:var(--border);
+  border:1px solid var(--border); border-radius:var(--r);
+  overflow:hidden; box-shadow:var(--sh-sm); margin-bottom:2rem;
+}
+.al-card { background:var(--white); padding:1.9rem 1.7rem; transition:background .15s }
+.al-card:hover { background:var(--off) }
+.al-dot { width:10px; height:10px; border-radius:50%; margin-bottom:1.1rem }
+.dot-ok    { background:#22c55e; box-shadow:0 0 0 3px #dcfce7 }
+.dot-warn  { background:#f59e0b; box-shadow:0 0 0 3px #fef3c7 }
+.dot-crit  { background:#ef4444; box-shadow:0 0 0 3px #fee2e2; animation:pulse-red 1.6s ease-in-out infinite }
+.al-tier   { font-family:var(--mono); font-size:.67rem; font-weight:500; letter-spacing:.1em; text-transform:uppercase; margin-bottom:.38rem }
+.tier-ok   { color:var(--ok) }
+.tier-warn { color:var(--warn) }
+.tier-crit { color:var(--danger) }
+.al-range  { font-family:var(--serif); font-size:1.45rem; color:var(--ink); margin-bottom:.45rem; line-height:1.2 }
+.al-desc   { font-size:.8rem; color:var(--muted); line-height:1.6 }
+
+/* ─ Serial monitor ─ */
+.serial {
+  background:#0f172a; border-radius:var(--r); overflow:hidden; box-shadow:var(--sh);
+}
+.serial-bar {
+  background:#1e293b; padding:.7rem 1.15rem;
+  display:flex; align-items:center; gap:.55rem;
+  border-bottom:1px solid #334155;
+}
+.serial-bar span { font-family:var(--mono); font-size:.7rem; color:#64748b; letter-spacing:.05em }
+.serial-body { padding:1.4rem 1.5rem; font-family:var(--mono); font-size:.8rem; line-height:2 }
+.s-line     { display:block }
+.s-prompt   { color:#334155; margin-right:.5rem; user-select:none }
+.s-normal   { color:#94a3b8 }
+.s-caution  { color:#fbbf24 }
+.s-critical { color:#f87171 }
+
+/* ─ Footer ─ */
+footer {
+  border-top:1px solid var(--border);
+  padding:2.5rem 2rem;
+}
+.foot-in {
+  max-width:1060px; margin:0 auto;
+  display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem;
+}
+.foot-brand { font-family:var(--serif); font-size:.95rem; color:var(--ink2) }
+.foot-meta  { font-family:var(--mono); font-size:.72rem; color:var(--muted); letter-spacing:.04em }
+
+/* ─ Animations ─ */
+@keyframes rise {
+  from { opacity:0; transform:translateY(14px) }
+  to   { opacity:1; transform:translateY(0) }
+}
+@keyframes pulse-red {
+  0%,100% { box-shadow:0 0 0 3px #fee2e2 }
+  50%      { box-shadow:0 0 0 6px rgba(239,68,68,.15) }
+}
+.reveal {
+  opacity:0; transform:translateY(18px);
+  transition:opacity .55s ease, transform .55s ease;
+}
+.reveal.vis { opacity:1; transform:none }
+
+/* ─ Responsive ─ */
+@media(max-width:720px){
+  .hero{ grid-template-columns:1fr; gap:2.5rem; padding:5rem 1.5rem 3rem }
+  .nav-links{ display:none }
+  h1{ font-size:2.2rem }
+  h2{ font-size:1.6rem }
+  .wrap,.wrapW{ padding:0 1.25rem }
+  .alert-grid{ grid-template-columns:1fr }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-in">
+    <div class="nav-logo"><b>DHT11</b> Monitor — Arduino Project</div>
+    <ul class="nav-links">
+      <li><a href="#components">Components</a></li>
+      <li><a href="#wiring">Wiring</a></li>
+      <li><a href="#code">Code</a></li>
+      <li><a href="#alerts">Alerts</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div>
+    <div class="eyebrow">Arduino Project</div>
+    <h1>Temperature &amp;<br><em>Humidity</em> Monitor</h1>
+    <p class="hero-subtitle">Arduino-based environmental sensing with threshold alerts</p>
+    <p class="hero-desc">This project uses a DHT11 sensor with Arduino to measure temperature and humidity, adding layered warning logic for industrial-style safety monitoring.</p>
+  </div>
+  <div class="stat-block">
+    <div class="stat-cell">
+      <span class="stat-val">DHT11</span>
+      <span class="stat-key">Sensor</span>
+    </div>
+    <div class="stat-cell">
+      <span class="stat-val">Pin 2</span>
+      <span class="stat-key">Data pin</span>
+    </div>
+    <div class="stat-cell">
+      <span class="stat-val">9600</span>
+      <span class="stat-key">Baud rate</span>
+    </div>
+    <div class="stat-cell">
+      <span class="stat-val">2 s</span>
+      <span class="stat-key">Interval</span>
+    </div>
+  </div>
+</div>
+
+<!-- COMPONENTS -->
+<div class="section" id="components">
+  <div class="wrapW reveal">
+    <p class="sec-eyebrow">01 — Bill of Materials</p>
+    <h2>Components</h2>
+    <p class="sec-intro">Everything needed to build this project. The 3-pin DHT11 module is the recommended choice — no external resistor required.</p>
+    <div class="comp-grid">
+      <div class="comp-card">
+        <div class="comp-ico">🔌</div>
+        <div class="comp-name">Arduino Board</div>
+        <div class="comp-desc">Any board with a 5 V output and digital GPIO. The Uno or Nano are ideal for beginners.</div>
+        <span class="badge">Uno / Nano</span>
+      </div>
+      <div class="comp-card">
+        <div class="comp-ico">🌡️</div>
+        <div class="comp-name">DHT11 Sensor Module</div>
+        <div class="comp-desc">3-pin breakout version with an onboard pull-up resistor. Measures temperature and relative humidity.</div>
+        <span class="badge">3-pin module</span>
+      </div>
+      <div class="comp-card">
+        <div class="comp-ico">🔗</div>
+        <div class="comp-name">Jumper Wires</div>
+        <div class="comp-desc">Three wires — male-to-male or male-to-female. One each for VCC, GND, and DATA.</div>
+        <span class="badge">×3 wires</span>
+      </div>
+      <div class="comp-card">
+        <div class="comp-ico">〰️</div>
+        <div class="comp-name">10 kΩ Resistor</div>
+        <div class="comp-desc">Only needed with the raw 4-pin DHT11 component. Acts as a pull-up between DATA and VCC.</div>
+        <span class="badge badge--opt">Optional</span>
+      </div>
+      <div class="comp-card">
+        <div class="comp-ico">📦</div>
+        <div class="comp-name">Adafruit DHT Library</div>
+        <div class="comp-desc">Install via Arduino IDE Library Manager. Search "DHT sensor library" by Adafruit.</div>
+        <span class="badge">Library</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- WIRING -->
+<div class="section" id="wiring">
+  <div class="wrapW reveal">
+    <p class="sec-eyebrow">02 — Connection Guide</p>
+    <h2>Wiring Diagram</h2>
+    <p class="sec-intro">Select your sensor type. The module version is the simplest — just three wires.</p>
+
+    <div class="tab-strip">
+      <button class="tab-btn on" onclick="switchTab('w3',this)">3-Pin Module</button>
+      <button class="tab-btn"   onclick="switchTab('w4',this)">4-Pin Raw Sensor</button>
+    </div>
+
+    <!-- 3-pin -->
+    <div id="w3" class="tab-pane on">
+      <table class="wire-tbl">
+        <thead>
+          <tr>
+            <th>DHT11 Pin</th><th></th>
+            <th>Arduino Pin</th>
+            <th>Wire Colour</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="chip chip-vcc">VCC</span></td>
+            <td class="arrow-col">→</td>
+            <td><span class="chip chip-vcc">5 V</span></td>
+            <td style="font-size:.82rem;color:#b91c1c">Red</td>
+            <td style="font-size:.82rem;color:var(--muted)">Power supply</td>
+          </tr>
+          <tr>
+            <td><span class="chip chip-gnd">GND</span></td>
+            <td class="arrow-col">→</td>
+            <td><span class="chip chip-gnd">GND</span></td>
+            <td style="font-size:.82rem;color:#374151">Black</td>
+            <td style="font-size:.82rem;color:var(--muted)">Common ground</td>
+          </tr>
+          <tr>
+            <td><span class="chip chip-dat">DATA</span></td>
+            <td class="arrow-col">→</td>
+            <td><span class="chip chip-dat">Digital Pin 2</span></td>
+            <td style="font-size:.82rem;color:#166534">Green / Yellow</td>
+            <td style="font-size:.82rem;color:var(--muted)">Serial data signal</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="note-row note-info">
+        <span class="note-ico">ℹ️</span>
+        <span>The 3-pin <strong>module</strong> already includes an onboard 10 kΩ pull-up resistor. Simply connect three wires and upload the code — no extra components needed.</span>
+      </div>
+    </div>
+
+    <!-- 4-pin -->
+    <div id="w4" class="tab-pane">
+      <table class="wire-tbl">
+        <thead>
+          <tr>
+            <th>DHT11 Pin</th><th></th>
+            <th>Arduino / Destination</th>
+            <th>Wire Colour</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="chip chip-vcc">Pin 1 — VCC</span></td>
+            <td class="arrow-col">→</td>
+            <td><span class="chip chip-vcc">5 V</span></td>
+            <td style="font-size:.82rem;color:#b91c1c">Red</td>
+            <td style="font-size:.82rem;color:var(--muted)">Power supply</td>
+          </tr>
+          <tr>
+            <td><span class="chip chip-dat">Pin 2 — DATA</span></td>
+            <td class="arrow-col">→</td>
+            <td><span class="chip chip-dat">Digital Pin 2</span></td>
+            <td style="font-size:.82rem;color:#166534">Green / Yellow</td>
+            <td style="font-size:.82rem;color:var(--muted)">Signal line</td>
+          </tr>
+          <tr>
+            <td><span class="chip chip-pull">10 kΩ resistor</span></td>
+            <td class="arrow-col">→</td>
+            <td><span class="chip chip-pull">DATA ↔ VCC</span></td>
+            <td style="font-size:.82rem;color:#92400e">Orange</td>
+            <td style="font-size:.82rem;color:var(--muted)">Pull-up — required</td>
+          </tr>
+          <tr>
+            <td><span class="chip chip-nc">Pin 3 — NC</span></td>
+            <td class="arrow-col" style="color:var(--border2)">—</td>
+            <td style="font-size:.82rem;color:var(--muted)">Not connected</td>
+            <td>—</td>
+            <td style="font-size:.82rem;color:var(--muted)">Leave floating</td>
+          </tr>
+          <tr>
+            <td><span class="chip chip-gnd">Pin 4 — GND</span></td>
+            <td class="arrow-col">→</td>
+            <td><span class="chip chip-gnd">GND</span></td>
+            <td style="font-size:.82rem;color:#374151">Black</td>
+            <td style="font-size:.82rem;color:var(--muted)">Common ground</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="note-row note-warn">
+        <span class="note-ico">⚠️</span>
+        <span>The raw 4-pin sensor has no built-in pull-up. <strong>Connect a 10 kΩ resistor between Pin 2 (DATA) and Pin 1 (VCC).</strong> Without it the data line will float and give unreliable readings.</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CODE -->
+<div class="section" id="code">
+  <div class="wrapW reveal">
+    <p class="sec-eyebrow">03 — Firmware</p>
+    <h2>Arduino Code</h2>
+    <p class="sec-intro">Full source with sensor validation and three-tier alert logic. Upload directly to your Arduino board.</p>
+
+    <div class="code-card">
+      <div class="code-bar">
+        <div class="dots"><span></span><span></span><span></span></div>
+        <span class="filename">dht11_monitor.ino</span>
+        <button class="copy-btn" id="cpyBtn" onclick="copyCode()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <rect x="9" y="9" width="13" height="13" rx="2"/>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+          </svg>
+          Copy
+        </button>
+      </div>
+<pre><span class="pp">#include</span> <span class="st">&lt;DHT.h&gt;</span>
+
+<span class="pp">#define</span> <span class="cn">DHTPIN</span>   <span class="nm">2</span>        <span class="cm">// Data pin → digital pin 2</span>
+<span class="pp">#define</span> <span class="cn">DHTTYPE</span>  <span class="cn">DHT11</span>    <span class="cm">// Sensor model</span>
+
+<span class="tp">DHT</span> <span class="fn">dht</span>(<span class="cn">DHTPIN</span>, <span class="cn">DHTTYPE</span>);
+
+<span class="kw">void</span> <span class="fn">setup</span>() {
+  Serial.<span class="fn">begin</span>(<span class="nm">9600</span>);
+  dht.<span class="fn">begin</span>();
+}
+
+<span class="kw">void</span> <span class="fn">loop</span>() {
+  <span class="tp">float</span> humidity    <span class="op">=</span> dht.<span class="fn">readHumidity</span>();
+  <span class="tp">float</span> temperature <span class="op">=</span> dht.<span class="fn">readTemperature</span>();
+
+  <span class="cm">// Validate sensor readings before processing</span>
+  <span class="kw">if</span> (<span class="fn">isnan</span>(humidity) <span class="op">||</span> <span class="fn">isnan</span>(temperature)) {
+    Serial.<span class="fn">println</span>(<span class="st">"Failed to read from DHT sensor!"</span>);
+    <span class="kw">return</span>;
+  }
+
+  <span class="cm">// Print readings to Serial Monitor</span>
+  Serial.<span class="fn">print</span>(<span class="st">"Humidity: "</span>);
+  Serial.<span class="fn">print</span>(humidity);
+  Serial.<span class="fn">print</span>(<span class="st">" %  "</span>);
+  Serial.<span class="fn">print</span>(<span class="st">"Temperature: "</span>);
+  Serial.<span class="fn">print</span>(temperature);
+  Serial.<span class="fn">println</span>(<span class="st">" °C"</span>);
+
+  <span class="cm">// Industrial-style layered threshold alerts</span>
+  <span class="kw">if</span> (temperature <span class="op">&gt;=</span> <span class="nm">35</span> <span class="op">&amp;&amp;</span> temperature <span class="op">&lt;</span> <span class="nm">45</span>) {
+    Serial.<span class="fn">println</span>(<span class="st">"CAUTION: Moderate temperature"</span>);
+  } <span class="kw">else if</span> (temperature <span class="op">&gt;=</span> <span class="nm">45</span>) {
+    Serial.<span class="fn">println</span>(<span class="st">"CRITICAL: Overheating! Take action!"</span>);
+  }
+
+  <span class="fn">delay</span>(<span class="nm">2000</span>);  <span class="cm">// Wait 2 s between readings</span>
+}</pre>
+    </div>
+
+    <textarea id="rawCode" style="position:absolute;left:-9999px;opacity:0" aria-hidden="true">#include <DHT.h>
+
+#define DHTPIN   2
+#define DHTTYPE  DHT11
+
+DHT dht(DHTPIN, DHTTYPE);
+
+void setup() {
+  Serial.begin(9600);
+  dht.begin();
+}
+
+void loop() {
+  float humidity    = dht.readHumidity();
+  float temperature = dht.readTemperature();
+
+  if (isnan(humidity) || isnan(temperature)) {
+    Serial.println("Failed to read from DHT sensor!");
+    return;
+  }
+
+  Serial.print("Humidity: ");
+  Serial.print(humidity);
+  Serial.print(" %  ");
+  Serial.print("Temperature: ");
+  Serial.print(temperature);
+  Serial.println(" °C");
+
+  if (temperature >= 35 && temperature < 45) {
+    Serial.println("CAUTION: Moderate temperature");
+  } else if (temperature >= 45) {
+    Serial.println("CRITICAL: Overheating! Take action!");
+  }
+
+  delay(2000);
+}</textarea>
+  </div>
+</div>
+
+<!-- ALERTS -->
+<div class="section" id="alerts">
+  <div class="wrapW reveal">
+    <p class="sec-eyebrow">04 — Safety Logic</p>
+    <h2>Alert Thresholds</h2>
+    <p class="sec-intro">Three-tier monitoring logic modelled on industrial safety systems. Each level triggers a distinct Serial message.</p>
+
+    <div class="alert-grid">
+      <div class="al-card">
+        <div class="al-dot dot-ok"></div>
+        <div class="al-tier tier-ok">Level 0 — Normal</div>
+        <div class="al-range">T &lt; 35 °C</div>
+        <div class="al-desc">Readings print normally. No additional alert is generated. System is within safe operating parameters.</div>
+      </div>
+      <div class="al-card">
+        <div class="al-dot dot-warn"></div>
+        <div class="al-tier tier-warn">Level 1 — Caution</div>
+        <div class="al-range">35 °C ≤ T &lt; 45 °C</div>
+        <div class="al-desc">Moderate temperature detected. Outputs <code style="font-family:var(--mono);font-size:.78rem">"CAUTION: Moderate temperature"</code> alongside sensor data.</div>
+      </div>
+      <div class="al-card">
+        <div class="al-dot dot-crit"></div>
+        <div class="al-tier tier-crit">Level 2 — Critical</div>
+        <div class="al-range">T ≥ 45 °C</div>
+        <div class="al-desc">Overheating condition. Outputs <code style="font-family:var(--mono);font-size:.78rem">"CRITICAL: Overheating! Take action!"</code> — immediate response required.</div>
+      </div>
+    </div>
+
+    <!-- Serial Monitor -->
+    <div class="serial">
+      <div class="serial-bar">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2">
+          <rect x="2" y="3" width="20" height="14" rx="2"/>
+          <line x1="8" y1="21" x2="16" y2="21"/>
+          <line x1="12" y1="17" x2="12" y2="21"/>
+        </svg>
+        <span>Serial Monitor — 9600 baud</span>
+      </div>
+      <div class="serial-body">
+        <span class="s-line"><span class="s-prompt">&gt;</span><span class="s-normal">Humidity: 58.00 %  Temperature: 26.50 °C</span></span>
+        <span class="s-line"><span class="s-prompt">&gt;</span><span class="s-normal">Humidity: 60.00 %  Temperature: 37.20 °C</span></span>
+        <span class="s-line"><span class="s-prompt">&gt;</span><span class="s-caution">CAUTION: Moderate temperature</span></span>
+        <span class="s-line"><span class="s-prompt">&gt;</span><span class="s-normal">Humidity: 64.00 %  Temperature: 47.80 °C</span></span>
+        <span class="s-line"><span class="s-prompt">&gt;</span><span class="s-critical">CRITICAL: Overheating! Take action!</span></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="foot-in">
+    <div class="foot-brand">DHT11 Temperature &amp; Humidity Monitor</div>
+    <div class="foot-meta">Arduino · Student Project Portfolio</div>
+  </div>
+</footer>
+
+<script>
+  function switchTab(id, btn) {
+    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('on'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('on'));
+    document.getElementById(id).classList.add('on');
+    btn.classList.add('on');
+  }
+
+  function copyCode() {
+    navigator.clipboard.writeText(document.getElementById('rawCode').value).then(() => {
+      const b = document.getElementById('cpyBtn');
+      b.classList.add('ok');
+      b.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Copied!`;
+      setTimeout(() => {
+        b.classList.remove('ok');
+        b.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy`;
+      }, 2500);
+    });
+  }
+
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('vis'); io.unobserve(e.target); } });
+  }, { threshold: 0.07 });
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+</script>
+</body>
+</html>
